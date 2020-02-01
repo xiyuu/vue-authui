@@ -4,14 +4,41 @@ import axios from '../axios'
  * 角色管理模块
  */
 
-// 保存
+ // 分页查询
+export const findPage = () => {
+    return axios({
+        url: '/base/baseRole/roleList?page=1&limit=10',
+        method: 'get'
+    })
+}
+
+// 新增角色
+
 export const save = (data) => {
     return axios({
-        url: '/role/save',
+        url: '/base/baseRole/role',
         method: 'post',
         data
     })
 }
+
+// 编辑当前角色
+export const editRole = (data) => {
+    return axios({
+        url: '/base/baseRole/role',
+        method: 'put',
+        data
+    })
+}
+
+// 删除单个数据
+export const handleOneDelete = () => {
+    return axios({
+        url: 'base/baseRole/role/sdfefwertfe3br1234124412312',
+        method: 'delete'
+    })
+}
+
 // 删除
 export const batchDelete = (data) => {
     return axios({
@@ -20,14 +47,7 @@ export const batchDelete = (data) => {
         data
     })
 }
-// 分页查询
-export const findPage = (data) => {
-    return axios({
-        url: '/role/findPage',
-        method: 'post',
-        data
-    })
-}
+
 // 查询全部
 export const findAll = () => {
     return axios({

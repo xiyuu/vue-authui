@@ -1,12 +1,12 @@
-
+import { baseUrl } from '@/utils/global'
 //axios 默认配置，包含基础路径等信息。
 export default {
   method: 'get',
   // 基础url前缀
-  baseURL: 'http://localhost:8080/',
+  baseUrl: baseUrl,
   // 请求头信息
   headers: {
-    'Content-Type': 'application/json;charset=UTF-8'
+    'Content-Type': 'application/x-www-form-urlencoded'
   },
   // 参数
   data: {},

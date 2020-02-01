@@ -23,7 +23,9 @@ export const batchDelete = (data) => {
 // 查询机构树
 export const findDeptTree = () => {
     return axios({
-        url: '/dept/findTree',
+        // url: '/dept/findTree',
+        // url: 'http://47.98.153.30:18900/base/baseUser/user/list?page=1&limit=10',
+        url: '/base/baseUser/user/list?page=1&limit=10',
         method: 'get'
     })
 }

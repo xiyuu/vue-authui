@@ -10,6 +10,10 @@ import store from './store'
 
 Vue.config.productionTip = false
 
+import axios from 'axios'
+axios.defaults.withCredentials = true;//ÈÃajaxÐ¯´øcookie
+Vue.prototype.$axios = axios;
+
 Vue.use(ElementUI);
 Vue.use(api);
 

@@ -1,7 +1,7 @@
 <template>
   <div>
     <!--flex弹性盒子模型，justify-content：主抽 -->
-    <div style="display: flex;justify-content: center;margin-top: 150px">
+    <div style="display: flex;justify-content: center;margin-top: 150px" :rules="fieldRules">
       <el-card style="width: 400px">
         <div slot="header" class="clearfix">
           <span>登录</span>
@@ -25,9 +25,8 @@
             <td colspan="2">
               <!-- 点击事件的两种不同的写法v-on:click和 @click-->
               <!--<el-button style="width: 300px" type="primary" v-on:click="doLogin">登录</el-button>-->
-              <el-button style="width: 300px" type="primary" @click="doLogin">登录</el-button>
-              <el-button type="primary" @click="login()">登录测试</el-button>
-
+              <!--<el-button style="width: 300px" type="primary" @click="doLogin">登录</el-button>-->
+              <el-button style="width: 300px" type="primary" @click="login()">登录</el-button>
             </td>
           </tr>
         </table>
@@ -36,13 +35,11 @@
   </div>
 </template>
 
-
-
-
 <script>
 import mock from '@/mock/index.js'
 import Cookies from "js-cookie";
 import router from '@/router'
+import qs from 'qs';
   export default {
     name: 'Login',
     //单页面中不支持前面的data:{}方式
@@ -56,31 +53,40 @@ import router from '@/router'
         //可是一般来说可能希望在不同的组件中引用的时候，使用不同的值，所以这里要用return
         //这样在A组件和B组件分别引用这个变量的时候是不会互相影响的
         user:{
-          username:'xiaoyuyu',
+          username:'melo',
           password:'123456',
           //为了登录方便，可以直接在这里写好用户名和密码的值
+        },
+        fieldRules: {
+          //校验规则
+          username: [
+            { required: true, message: '请输入账号', trigger: 'blur' },
+          ],
+          password: [
+            { required: true, message: '请输入密码', trigger: 'blur' },
+          ]
         }
       }
     },
     methods:{
       doLogin(){//一点击登录按钮，这个方法就会执行
         alert(JSON.stringify(this.user))//可以直接把this.user对象传给后端进行校验用户名和密码
-        router.push({ path: '/home' });
+        router.push({ path: '/' });
        //将当前用户名、密码存入数据库
-    
 
       },
       login(){
-        let userInfo = {username:this.user.username, password:this.user.password}
-        this.$api.login.login(JSON.stringify(userInfo)).then(function(res) {
-　　　　　　　alert(res.data.token)
-             Cookies.set('token', res.data.token) // 放置token到Cookie 
-             sessionStorage.setItem('user', userInfo.username) // 保存用户到本地会话
-             router.push({ path: '/home' });  // 登录成功，跳转到主页
+        let userInfo = {loginName:this.user.username, password:this.user.password}
+       this.$api.login.login(qs.stringify(userInfo)).then(function(res) {
+       // this.$api.login.login(userInfo).then((res) => {
+             Cookies.set('token', userInfo.password) // 放置token到Cookie
+            
+             sessionStorage.setItem('user', userInfo.loginName) // 保存用户到本地会话
+             router.push({ path: '/' });  // 登录成功，跳转到主页
           }).catch(function(res) {
             alert(res);
           });
       }
-    }
+    } 
   }
 </script>

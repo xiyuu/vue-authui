@@ -11,7 +11,7 @@
           active-text-color="#ffd04b" mode="horizontal" @select="selectNavBar()">
         <el-menu-item index="1" @click="$router.push('/')">首页</el-menu-item>
         <el-menu-item index="2">消息管理</el-menu-item>
-        <el-menu-item index="3">订单中心</el-menu-item>
+        <el-menu-item index="3">系统管理</el-menu-item>
       </el-menu>
     </span>
     <span class="tool-bar">

@@ -52,6 +52,7 @@ export default {
     //加载导航菜单
     findMenuTree () {
         this.$api.menu.findMenuTree().then((res) => {
+          
            this.$store.commit('setNavTree', res.data)
         }).catch((res) => {
           alert(res);

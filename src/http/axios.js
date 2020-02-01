@@ -1,7 +1,11 @@
+import Vue from 'vue'
 import axios from 'axios';
 import config from './config';
 import Cookies from "js-cookie";
 import router from '@/router'
+
+axios.defaults.withCredentials=true;//让ajax携带cookie
+Vue.prototype.$axios = axios;
 
 // 使用vuex做全局loading时使用
 // import store from '@/store'

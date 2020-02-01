@@ -4,14 +4,24 @@
 
 const path = require('path')
 
+var proxyConfig = require('./proxyConfig')
 module.exports = {
   dev: {
-
     // Paths
     assetsSubDirectory: 'static',
     assetsPublicPath: '/',
     proxyTable: {},
-
+    // proxyTable: proxyConfig.proxyList,
+    
+  //   proxyTable: { //设置地址代理，跨域请求外部链接
+  //     '/base': {
+  //         target: 'http://47.98.153.30:18900',//设置你调用的接口域名和端口号 别忘了加http
+  //         changeOrigin: true,
+  //         pathRewrite: {
+  //           '^/base': '/base'
+  //         }
+  //     }
+  // },
     // Various Dev Server settings
     host: 'localhost', // can be overwritten by process.env.HOST
     port: 8080, // can be overwritten by process.env.PORT, if port is in use, a free one will be determined
