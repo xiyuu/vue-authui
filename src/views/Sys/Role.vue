@@ -16,7 +16,7 @@
     <!--表格内容栏-->
     <KtTable permsEdit="sys:user:edit" permsDelete="sys:user:delete"
         :data="pageResult" :columns="columns" 
-        @findPage="findPage" @handleEdit="handleEdit" @handleDelete="handleDelete">
+        @findPage="findPage" @handleEdit="handleEdit" @handleAuth="handleAuth" @handleDelete="handleDelete">
     </KtTable>
     <!--新增界面-->
     <el-dialog :title="operation?'新增Focus Cloud角色':'修改Focus Cloud角色'" width="40%" :visible.sync="dialogVisible" :close-on-click-modal="false">
@@ -59,29 +59,24 @@
         </div>
     </el-dialog>
 
-    <!--角色菜单，表格树内容栏-->
+       <!--授权界面-->
+    <el-dialog title="用户授权" width="40%" :visible.sync="authDialogVisible" :close-on-click-modal="false">
+  <!--当前页面仅用于展示资源管理菜单栏-->
+  <!--资源菜单，表格树内容栏-->
 	<div class="menu-container" :v-if="true">
-		<div class="menu-header">
-			<span><B>角色菜单授权</B></span>
-		</div>
         <el-tree :data="menuData" size="mini" show-checkbox node-key="id" :props="defaultProps"
 			style="width: 100%;pading-top:20px;" ref="menuTree" :render-content="renderContent"
 			v-loading="menuLoading" element-loading-text="拼命加载中" :check-strictly="true"
 			@check-change="handleMenuCheckChange">
-		</el-tree>
-        <div style="float:left;padding-left:24px;padding-top:12px;padding-bottom:4px;">
-			<el-checkbox v-model="checkAll" @change="handleCheckAll" :disabled="this.selectRole.id == null"><b>全选</b></el-checkbox>
-		</div>
-
-        <div style="float:right;padding-right:15px;padding-top:4px;padding-bottom:4px;">
-			<kt-button label="重置" perms="sys:role:edit" type="primary" @click="resetSelection" 
+	    </el-tree>
+        <div slot="footer" class="dialog-footer">
+            		<kt-button label="重置" perms="sys:role:edit" type="primary" @click="resetSelection" 
 				:disabled="this.selectRole.id == null"/>
-			<kt-button label="提交" perms="sys:role:edit" type="primary" @click="submitAuthForm" 
+			<kt-button label="授权" perms="sys:role:edit" type="primary" @click="submitAuthForm" 
 				:disabled="this.selectRole.id == null" :loading="authLoading"/>
-		</div>
-		
-		
+        </div>
 	</div>
+    </el-dialog>
   </div>
 </template>
 
@@ -112,6 +107,7 @@ export default {
             pageResult: {},
             operation: false, // true:新增, false:编辑
             dialogVisible: false, // 新增编辑界面是否显示
+            authDialogVisible: false, // 授权界面是否显示
             editLoading: false,
             dataFormRules: {
                 name: [
@@ -133,7 +129,7 @@ export default {
 			checkAll: false,
 			currentRoleMenus: [],
 			defaultProps: {
-				children: 'children',
+				children: 'childrenList',
 				label: 'name'
 			}
         }
@@ -150,14 +146,14 @@ export default {
                 this.pageResult.content = res.data.list
 
                 //获取树形结构，用于授权展示
-                this.findTreeData()
+                this.findResourceTree()
 
             })
         },
         // 删除用户
         handleOneDelete: function () {
-            this.$api.role.handleOneDelete().then((res) => {            
-                 if(res.status == 500){
+            this.$confirm('确认删除选中记录吗？', '提示', {type: 'warning'}).then(() => {
+                if(res.status == 500){
                     this.$message({ message: '删除失败', type: 'error' })
                 }else if(res.status == 200){
                     this.$message({ message: '删除成功', type: 'success' })
@@ -185,6 +181,10 @@ export default {
             //增加id 属性
             this.operation = false
             this.dataForm = Object.assign({}, params.row)
+        },
+        // 显示授权页面
+        handleAuth: function (params) {
+            this.authDialogVisible = true
         },
         // 用户新增按钮
         editSubmit: function () {
@@ -238,16 +238,26 @@ export default {
 				this.menuLoading = false
 			})
 		},
+        		// 获取资源菜单数
+		findResourceTree: function () {
+			this.menuLoading = true
+			this.$api.role.findResourceTree().then((res) => {
+        if(res.status == 502){
+           this.$message({ message: res.data, type: 'error' })
+           return
+        }else if(res.status == 200){
+          //将后台传来的数据进行转换。转换成所需要的的数据 
+          this.menuData = res.data
+        }
+				this.menuLoading = false
+			})
+		},
 		// 角色选择改变监听
 		handleRoleSelectChange(val) {
 			if(val == null || val.val == null) {
 				return
 			}
 			this.selectRole = val.val
-			this.$api.role.findRoleMenus({'roleId':val.val.id}).then((res) => {
-				this.currentRoleMenus = res.data
-				this.$refs.menuTree.setCheckedNodes(res.data)
-			})
 		},
 		// 树节点选择监听
 		handleMenuCheckChange(data, check, subCheck) {
@@ -302,6 +312,7 @@ export default {
 				let roleMenu = { roleId:roleId, menuId:checkedNodes[i].id }
 				roleMenus.push(roleMenu)
 			}
+            
 			this.$api.role.saveRoleMenus(roleMenus).then((res) => {
 				if(res.code == 200) {
 					this.$message({ message: '操作成功', type: 'success' })
@@ -315,14 +326,6 @@ export default {
 			return (
 			<div class="column-container">
 				<span style="text-algin:center;margin-right:80px;">{data.name}</span>
-				<span style="text-algin:center;margin-right:80px;">
-					<el-tag type={data.type === 0?'':data.type === 1?'success':'info'} size="small">
-						{data.type === 0?'目录':data.type === 1?'菜单':'按钮'}
-					</el-tag>
-				</span>
-				<span style="text-algin:center;margin-right:80px;"> <i class={data.icon}></i></span>
-				<span style="text-algin:center;margin-right:80px;">{data.parentName?data.parentName:'顶级菜单'}</span>
-				<span style="text-algin:center;margin-right:80px;">{data.url?data.url:'\t'}</span>
 			</div>);
       	}
     },

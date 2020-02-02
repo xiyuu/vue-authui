@@ -1,64 +1,118 @@
 <template>
-  <div class="site-wrapper site-page--not-found">
-    <div class="site-content__wrapper">
-      <div class="site-content">
-        <h2 class="not-found-title">404</h2>
-        <p class="not-found-desc">抱歉！您访问的页面<em>失联</em>啦 ...</p>
-        <el-button @click="$router.go(-1)">返回上一页</el-button>
-        <el-button type="primary" class="not-found-btn-gohome" @click="$router.push('/')">进入首页</el-button>
-      </div>
-    </div>
-  </div>
+  <!--当前页面仅用于展示资源管理菜单栏-->
+  <!--资源菜单，表格树内容栏-->
+	<div class="menu-container" :v-if="true">
+		<div class="menu-header">
+			<span><B>资源菜单授权</B></span>
+		</div>
+        <el-tree :data="menuData" size="mini" show-checkbox node-key="id" :props="defaultProps"
+			style="width: 100%;pading-top:20px;" ref="menuTree" :render-content="renderContent"
+			v-loading="menuLoading" element-loading-text="拼命加载中" :check-strictly="true"
+			@check-change="handleMenuCheckChange">
+	    </el-tree>
+	</div>
 </template>
-
 <script>
-  export default {
-  }
+import qs from 'qs';
+export default {
+    data() {
+        return {
+            selectRole: {},
+			menuData: [],
+		    menuSelections: [],
+			menuLoading: false,
+			authLoading: false,
+			checkAll: false,
+			currentRoleMenus: [],
+			defaultProps: {
+			children: 'childrenList',
+			label: 'name'
+			}
+        }
+    },
+    methods: {
+		// 获取资源菜单数
+		findResourceTree: function () {
+			this.menuLoading = true
+			this.$api.role.findResourceTree().then((res) => {
+        if(res.status == 502){
+           this.$message({ message: res.data, type: 'error' })
+           return
+        }else if(res.status == 200){
+          //将后台传来的数据进行转换。转换成所需要的的数据 
+          this.menuData = res.data
+        }
+				this.menuLoading = false
+			})
+		},
+		// 角色选择改变监听
+		handleRoleSelectChange(val) {
+			if(val == null || val.val == null) {
+				return
+			}
+			this.selectRole = val.val
+			this.$api.role.findRoleMenus({'roleId':val.val.id}).then((res) => {
+				this.currentRoleMenus = res.data
+				this.$refs.menuTree.setCheckedNodes(res.data)
+			})
+		},
+		// 树节点选择监听
+		handleMenuCheckChange(data, check, subCheck) {
+			if(check) {
+				// 节点选中时同步选中父节点
+				let parentId = data.parentId
+				this.$refs.menuTree.setChecked(parentId, true, false)
+			} else {
+				// 节点取消选中时同步取消选中子节点
+				if(data.children != null) {
+					data.children.forEach(element => {
+						this.$refs.menuTree.setChecked(element.id, false, false)
+					});
+				}
+			}
+		},
+		// 全选操作
+		handleCheckAll() {
+			if(this.checkAll) {
+				let allMenus = []
+				this.checkAllMenu(this.menuData, allMenus)
+				this.$refs.menuTree.setCheckedNodes(allMenus)
+			} else {
+				this.$refs.menuTree.setCheckedNodes([])
+			}
+		},
+		// 递归全选
+		checkAllMenu(menuData, allMenus) {
+			menuData.forEach(menu => {
+				allMenus.push(menu)
+				if(menu.children) {
+					this.checkAllMenu(menu.children, allMenus)
+				}
+			});
+		},
+		renderContent(h, { node, data, store }) {
+			return (
+			<div class="column-container">
+				<span style="text-algin:center;margin-right:80px;">{data.name}</span>
+				</div>);
+      	}
+    },
+    mounted() {
+         //获取树形结构，用于授权展示资源管理
+         this.findResourceTree()
+    }
+}
 </script>
 
-
-<style scoped lang="scss">
-  .site-wrapper.site-page--not-found {
-    position: absolute;
-    top: 60px;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    overflow: hidden;
-    .site-content__wrapper {
-      padding: 0;
-      margin: 0;
-      background-color: #fff;
-    }
-    .site-content {
-      position: fixed;
-      top: 15%;
-      left: 50%;
-      z-index: 2;
-      padding: 30px;
-      text-align: center;
-      transform: translate(-50%, 0);
-    }
-    .not-found-title {
-      margin: 20px 0 15px;
-      font-size: 8em;
-      font-weight: 500;
-      color: rgb(55, 71, 79);
-    }
-    .not-found-desc {
-      margin: 0 0 30px;
-      font-size: 26px;
-      text-transform: uppercase;
-      color: rgb(118, 131, 143);
-      > em {
-        font-style: normal;
-        color: #ee8145;
-      }
-    }
-    .not-found-btn-gohome {
-      margin-left: 30px;
-    }
-  }
+<style scoped>
+.menu-container {
+	margin-top: 10px;
+}
+.menu-header {
+	padding-left: 8px;
+	padding-bottom: 5px;
+	text-align: left;
+	font-size: 16px;
+	color: rgb(20, 89, 121);
+}
 </style>
-
-

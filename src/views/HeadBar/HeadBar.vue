@@ -35,20 +35,31 @@
 <script>
 import mock from "@/mock/index.js";
 import vuex from 'vuex'
-
-
-
 export default {
-  
   data() {
     return {
       isCollapse: false,
       username: "SmallRain",
       userAvatar: "",
-      activeIndex: '1'
+      activeIndex: '1',
+      headBarData: []
     };
   },
   methods: {
+    // 获取横向展示导航栏
+		findHeadBar: function () {
+			this.menuLoading = true
+			this.$api.menu.findHeadBar().then((res) => {
+        if(res.status == 502){
+           this.$message({ message: res.data, type: 'error' })
+           return
+        }else if(res.status == 200){
+          //将后台传来的数据进行转换。转换成所需要的的数据 
+          this.headBarData = res.data
+        }
+				this.menuLoading = false
+			})
+		},
     selectNavBar(key, keyPath) {
       console.log(key, keyPath)
     },
@@ -79,6 +90,7 @@ export default {
     }
   },
   mounted() {
+    this.findHeadBar()
     this.sysName = "Focus Cloud";
     var user = sessionStorage.getItem("user");
     if (user) {

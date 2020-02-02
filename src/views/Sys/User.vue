@@ -16,7 +16,7 @@
     <!--表格内容栏-->
     <KtTable permsEdit="sys:user:edit" permsDelete="sys:user:delete"
         :data="pageResult" :columns="columns" 
-        @findPage="findPage" @handleEdit="handleEdit" @handleDelete="handleDelete">
+        @findPage="findPage" @handleEdit="handleEdit"  @handleAuth="handleAuth" @handleDelete="handleDelete" @handleCurrentChange="handleRoleSelectChange">
     </KtTable>
     <!--新增界面-->
     <el-dialog :title="operation?'注册Focus Cloud用户':'修改Focus Cloud用户'" width="40%" :visible.sync="editDialogVisible" :close-on-click-modal="false">
@@ -83,6 +83,27 @@
         </div>
     </el-dialog>
 
+    <!--授权界面-->
+    <el-dialog title="用户授权" width="40%" :visible.sync="authDialogVisible" :close-on-click-modal="false">
+  <!--当前页面仅用于展示资源管理菜单栏-->
+  <!--资源菜单，表格树内容栏-->
+	<div class="menu-container" :v-if="true">
+        <el-tree :data="menuData" size="mini" show-checkbox node-key="id" :props="defaultProps"
+			style="width: 100%;pading-top:20px;" ref="menuTree" :render-content="renderContent"
+			v-loading="menuLoading" element-loading-text="拼命加载中" :check-strictly="true"
+			@check-change="handleMenuCheckChange">
+	    </el-tree>
+                <div slot="footer" class="dialog-footer">
+            		<kt-button label="重置" perms="sys:role:edit" type="primary" @click="resetSelection" 
+				:disabled="this.selectRole.id == null"/>
+			<kt-button label="授权" perms="sys:role:edit" type="primary" @click="submitAuthForm" 
+				:disabled="this.selectRole.id == null" :loading="authLoading"/>
+        </div>
+	</div>
+    </el-dialog>
+
+ 
+
     
   </div>
 </template>
@@ -98,6 +119,7 @@ export default {
     },
     data() {
         return {
+            userId: '',
             filters: {
                 name: ''
             },
@@ -114,6 +136,7 @@ export default {
             pageResult: {},
             operation: false, // true:新增, false:编辑
             editDialogVisible: false, // 新增编辑界面是否显示
+            authDialogVisible: false, // 授权界面是否显示
             editLoading: false,
             dataFormRules: {
                 name: [
@@ -130,11 +153,21 @@ export default {
                 email: 'test@qq.com',
                 signature: '安静只是一种表达',
             },
-            deptData: [],
             deptTreeProps: {
                 label: 'name',
                 children: 'children'
-            }
+            },
+            selectRole: {},
+			menuData: [],
+		    menuSelections: [],
+			menuLoading: false,
+			authLoading: false,
+			checkAll: false,
+			currentRoleMenus: [],
+			defaultProps: {
+			children: 'childrenList',
+			label: 'name'
+			}
         }
     },
     methods: {
@@ -151,8 +184,10 @@ export default {
         },
         // 删除用户
         handleOneDelete: function () {
-            this.$api.user.handleOneDelete().then((res) => {            
-                 if(res.status == 500){
+           this.$confirm('确认删除选中记录吗？', '提示', {
+            type: 'warning'
+           }).then(() => {
+                if(res.status == 500){
                     this.$message({ message: '删除失败', type: 'error' })
                 }else if(res.status == 200){
                     this.$message({ message: '删除成功', type: 'success' })
@@ -185,6 +220,11 @@ export default {
             delete params.row.loginName
             this.operation = false
             this.dataForm = Object.assign({}, params.row)
+        },
+        // 显示授权页面
+        handleAuth: function (params) {
+            this.authDialogVisible = true
+            this.userId = Object.assign({}, params.row)
         },
         // 用户新增按钮
         editSubmit: function () {
@@ -230,20 +270,114 @@ export default {
                 }
             })
         },
-        // 获取部门列表
-        findDeptTree: function () {
-            this.$api.dept.findDeptTree().then((res) => {
-                this.deptData = res.data
-            })
-        },
         // 菜单树选中
           deptTreeCurrentChangeHandle (data, node) {
             this.dataForm.deptId = data.id
             this.dataForm.deptName = data.name
-          }
+          },
+
+        // 获取资源菜单数
+		findResourceTree: function () {
+			this.menuLoading = true
+			this.$api.user.findUserAuth({'userId':this.userId}).then((res) => {
+        if(res.status == 502){
+           this.$message({ message: res.data, type: 'error' })
+           return
+        }else if(res.status == 200){
+          //将后台传来的数据进行转换。转换成所需要的的数据 
+          this.menuData = res.data
+        }
+				this.menuLoading = false
+			})
+
+		},
+		// 角色选择改变监听
+		handleRoleSelectChange(val) {
+			if(val == null || val.val == null) {
+				return
+			}
+			this.selectRole = val.val
+			this.$api.user.findUserAuth({'userId':val.val.id}).then((res) => {
+				this.currentRoleMenus = res.data
+				this.$refs.menuTree.setCheckedNodes(res.data)
+			})
+		},
+		// 树节点选择监听
+		handleMenuCheckChange(data, check, subCheck) {
+			if(check) {
+				// 节点选中时同步选中父节点
+				let parentId = data.parentId
+				this.$refs.menuTree.setChecked(parentId, true, false)
+			} else {
+				// 节点取消选中时同步取消选中子节点
+				if(data.children != null) {
+					data.children.forEach(element => {
+						this.$refs.menuTree.setChecked(element.id, false, false)
+					});
+				}
+			}
+		},
+        // 重置选择
+		resetSelection() {
+			this.checkAll = false
+			this.$refs.menuTree.setCheckedNodes(this.currentRoleMenus)
+		},
+		// 全选操作
+		handleCheckAll() {
+			if(this.checkAll) {
+				let allMenus = []
+				this.checkAllMenu(this.menuData, allMenus)
+				this.$refs.menuTree.setCheckedNodes(allMenus)
+			} else {
+				this.$refs.menuTree.setCheckedNodes([])
+			}
+		},
+		// 递归全选
+		checkAllMenu(menuData, allMenus) {
+			menuData.forEach(menu => {
+				allMenus.push(menu)
+				if(menu.children) {
+					this.checkAllMenu(menu.children, allMenus)
+				}
+			});
+		},
+        		// 角色菜单授权提交
+		submitAuthForm() {
+			let userIds = this.selectRole.id
+			if('admin' == this.selectRole.name) {
+				this.$message({message: '超级管理员拥有所有菜单权限，不允许修改！', type: 'error'})
+				return
+			}
+			this.authLoading = true
+			let checkedNodes = this.$refs.menuTree.getCheckedNodes(false, true)
+            let roleMenu = {}
+			let roleMenus = []
+			for(let i=0, len=checkedNodes.length; i<len; i++) {
+				roleMenu = { userIds:userIds, roleIds:checkedNodes[i].id }
+				roleMenus.push(roleMenu)
+			}
+    
+			this.$api.user.saveUserAuth(qs.stringify(roleMenu)).then((res) => {
+				if(res.status == 200) {
+					this.$message({ message: '操作成功', type: 'success' })
+                    return
+				} else {
+					this.$message({message: '操作失败, ' + res.data, type: 'error'})
+
+				}
+				this.authLoading = false
+			})
+		},
+		renderContent(h, { node, data, store }) {
+			return (
+			<div class="column-container">
+				<span style="text-algin:center;margin-right:80px;">{data.name}</span>
+				</div>);
+      	}  
     },
     mounted() {
-        this.findDeptTree()
+        //获取树形结构，用于授权展示资源管理
+        this.findResourceTree()
     }
 }
 </script>

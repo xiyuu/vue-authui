@@ -38,6 +38,24 @@ export const handleOneDelete = () => {
     })
 }
 
+// 查询用户授权列表
+export const findUserAuth = (params) => {
+    return axios({
+        url: '/base/baseUserRole/roleList',
+        method: 'get',
+        params
+    })
+}
+
+// 保存用户授权列表
+export const saveUserAuth = (data) => {
+    return axios({
+        url: '/base/baseUserRole/authoiize',
+        method: 'post',
+        data
+    })
+}
+
 // 批量删除
 export const batchDelete = (data) => {
     return axios({

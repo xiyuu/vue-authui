@@ -11,7 +11,7 @@ import store from './store'
 Vue.config.productionTip = false
 
 import axios from 'axios'
-axios.defaults.withCredentials = true;//ÈÃajaxĞ¯´øcookie
+axios.defaults.withCredentials = true;//è®©ajaxæºå¸¦cookie
 Vue.prototype.$axios = axios;
 
 Vue.use(ElementUI);

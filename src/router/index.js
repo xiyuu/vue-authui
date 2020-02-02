@@ -101,11 +101,11 @@ function addDynamicMenuAndRoutes(user, to, from) {
 
 /**
  * 处理路由到本地直接指定页面组件的情况
- * 比如'代码生成'是要求直接绑定到'Generator'页面组件
+ * 比如'环境部署'是要求直接绑定到'Generator'页面组件
  */
 function handleStaticComponent(router, dynamicRoutes) {
   for(let j=0;j<dynamicRoutes.length; j++) {
-    if(dynamicRoutes[j].name == '代码生成') {
+    if(dynamicRoutes[j].name == '环境部署') {
       dynamicRoutes[j].component = Generator
       break
     }

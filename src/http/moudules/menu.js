@@ -35,3 +35,13 @@ export const findMenuTree = () => {
         method: 'get'
     })
 }
+
+
+// 查找横向导航菜单树
+export const findHeadBar = () => {
+    return axios({
+        url: '/base/baseResource/indexResource',
+        method: 'get'
+    })
+}
+

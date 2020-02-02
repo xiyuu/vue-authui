@@ -39,6 +39,15 @@ export const handleOneDelete = () => {
     })
 }
 
+
+// 查找权限管理下面的导航树(资源管理/角色管理下面的授权弹窗需展示)
+export const findResourceTree = () => {
+    return axios({
+        url: '/base/baseResource/resourceTree',
+        method: 'get'
+    })
+}
+
 // 删除
 export const batchDelete = (data) => {
     return axios({
@@ -66,7 +75,8 @@ export const findRoleMenus = (params) => {
 // 保存角色菜单集合
 export const saveRoleMenus = (data) => {
     return axios({
-        url: '/role/saveRoleMenus',
+        // url: '/role/saveRoleMenus',
+        url: '/base/baseUserRole/authoiize',
         method: 'post',
         data
     })
